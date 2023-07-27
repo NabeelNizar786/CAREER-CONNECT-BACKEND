@@ -5,14 +5,20 @@ const dbConfig = require('./config/dbConfig');
 app.use(express.json());
 const userRoute = require('./routes/userRoute');
 const empRoute = require('./routes/empRoute');
+const adminRoute = require('./routes/adminRoute');
 const cors = require("cors");
 
 
 //cors
-app.use(cors())
+app.use(cors({ 
+  origin: ["http://localhost:5173"],
+  methods: ["GET", "POST"],
+  credentials: true
+}));
 
-app.use('/api/user', userRoute);
-app.use('/api/employer', empRoute);
+app.use('/user', userRoute);
+app.use('/employer', empRoute);
+app.use('/admin', adminRoute);
 const port = process.env.PORT || 5000;
 
 app.listen(port, () => console.log(`Listening on port ${port}`));
