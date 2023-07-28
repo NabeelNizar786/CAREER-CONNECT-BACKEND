@@ -17,16 +17,12 @@ const userRegister = async(req,res) => {
       .status(200)
       .json({exists:true, message:"email already exists"});
     }
-    
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-    password = hashedPassword;
 
     const newUser = new userModel({
       username:username,
       email:email,
       phone:phone,
-      password:password
+      password:sha256(password + process.env.PASSWORD_SALT)
     });
 
     await newUser.save();
@@ -48,7 +44,7 @@ const userLogin = async (req, res) => {
       return res.status(404).json({ message: "invalid email", login: false });
     }
 
-    const isMatch = await bcrypt.compare(password, userData.password);
+    const isMatch = await userModel.findOne({email: email, password: sha256(password + process.env.PASSWORD_SALT)});
     if (!isMatch) {
       return res
         .status(401)
@@ -94,14 +90,20 @@ const isUserAuth = async(req,res) => {
 const forgotPassword = async (req,res) => {
   try {
 
-    const {phone,password} = req.body;
+    const {phone,password, check} = req.body;
     console.log(phone,password);
-    const phoneMatch = await userModel.findOne({phone});
 
-    if(!phoneMatch) {
+    if(check === "yes") {
+      const phoneMatch = await userModel.findOne({phone});
+
+      if(!phoneMatch)
+
       return res
-      .status(404)
-      .json({message: "USER DOES NOT EXIST", check:false})
+      .status(400)
+      .json({message: "USER NOT FOUND"});
+
+      return res.status(200)
+      .json({message:"USER FOUND"});
     } 
 
     const user = await userModel.findOne({phone});
