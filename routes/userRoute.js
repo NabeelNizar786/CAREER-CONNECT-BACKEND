@@ -5,13 +5,15 @@ const {
   userRegister,
   userLogin,
   isUserAuth,
-  forgotPassword
+  forgotPassword,
+  googleLogin
 } = require('../controllers/userController');
 
 router.post('/register', userRegister);
 router.post('/login', userLogin);
+router.post('/googleLogin', googleLogin);
 router.get('/userAuth', userAuthentication, isUserAuth);
-router.patch('/forgotPass', forgotPassword)
+router.patch('/forgotPass', forgotPassword);
 
 
 

@@ -65,6 +65,30 @@ const empLogin = async (req, res) => {
   }
 };
 
+const googleLogin = async (req, res) => {
+  try {
+    const { email,id } = req.body;
+    const empData = await empModel.findOne({ email: email });
+    
+    if (!empData) {
+      return res.status(404).json({ message: "INVALID EMAIL", login: false });
+    } else {
+      const token = jwt.sign({ id: empData._id }, process.env.JWT_SECRET, {
+        expiresIn: 300000,
+      });
+      res.status(200).json({
+        login: true,
+        message: "LOGIN SUCCESSFUL",
+        token: token,
+        empData,
+      });
+    }
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).json({ error: error.message, login: false });
+  }
+};
+
 const isEmpAuth = async (req, res) => {
   try {
     const empData = await empModel.findOne({ _id: req.empId });
@@ -113,4 +137,5 @@ module.exports = {
   empLogin,
   isEmpAuth,
   forgotPassword,
+  googleLogin
 };
