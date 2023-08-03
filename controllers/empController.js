@@ -24,7 +24,7 @@ const empRegister = async (req, res) => {
     await newEmp.save();
     res
       .status(200)
-      .json({ message: "REGISTRATION SUCCESSFULL", created: true });
+      .json({ message: "REGISTRATION SUCCESSFULL, YOU CAN LOGIN AFTER VERIFICATION", created: true });
   } catch (error) {
     console.log(error.message);
     res.status(500).json({ error: error.message, created: false });
@@ -51,7 +51,9 @@ const empLogin = async (req, res) => {
       return res
         .status(401)
         .json({ message: "invalid passowrd", login: false });
-    } else {
+    } else if (!empData.verified) {
+      return res.status(401).json({message:"YOUR ACCOUNT IS UNDER VERIFICATION, PLEASE WAIT!"});
+    }else {
       const token = jwt.sign({ id: empData._id }, process.env.JWT_SECRET, {
         expiresIn: 300000,
       });
@@ -72,7 +74,7 @@ const googleLogin = async (req, res) => {
     
     if (!empData) {
       return res.status(404).json({ message: "INVALID EMAIL", login: false });
-    } else {
+    }  else {
       const token = jwt.sign({ id: empData._id }, process.env.JWT_SECRET, {
         expiresIn: 300000,
       });

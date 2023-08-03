@@ -24,9 +24,30 @@ const empSchema = new mongoose.Schema({
   },
   image:{
     type:String
-  }
-
-})
+  },
+  status: {
+    type: Boolean,
+    default: true
+  },
+  imageId: {
+    type:String,
+  },
+  about: {
+    type:String
+  },
+  phone: {
+    type:String
+  },
+  location: {
+    type:String
+  },
+  postCount: {
+    type: Number,
+    default: 0,
+  },
+},
+{timestamps: true}
+)
 
 const empModel = mongoose.model("employers", empSchema);
 
