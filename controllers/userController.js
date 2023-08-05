@@ -54,6 +54,7 @@ const userLogin = async (req, res) => {
         .status(401)
         .json({ message: "invalid passowrd", login: false });
     } else {
+
       const token = jwt.sign({ id: userData._id }, process.env.JWT_SECRET, {
         expiresIn: 3000000,
       });
@@ -61,7 +62,7 @@ const userLogin = async (req, res) => {
         login: true,
         message: "login successful",
         token: token,
-        userData,
+        userData: userData
       });
     }
   } catch (error) {
@@ -98,13 +99,15 @@ const googleLogin = async (req, res) => {
 
 const isUserAuth = async (req, res) => {
   try {
-    const userData = await userModel.findOne({ _id: req.userId });
+    const userData = await userModel.findOne({ _id: req.userId }).lean()
 
     if (!userData) {
       return res
         .status(404)
         .json({ message: "USER DOES NOT EXISTS", success: false });
     } else {
+      delete userData.password;
+      
       return res.status(200).json({ success: true, userData: userData });
     }
   } catch (error) {
@@ -139,10 +142,27 @@ const forgotPassword = async (req, res) => {
   }
 };
 
+const updateUserAbout = async(req,res) => {
+  try {
+    const {about} = req.body;
+    let userData = await userModel.findByIdAndUpdate(
+      {_id: req.userId},
+      {$set: {about: about}},
+      {new : true}
+    );
+    return res.status(200).json({ success: true, userData: userData });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ success: false, error: "Server Error" });
+  }
+}
+
+
 module.exports = {
   userRegister,
   userLogin,
   isUserAuth,
   forgotPassword,
-  googleLogin
+  googleLogin,
+  updateUserAbout
 };

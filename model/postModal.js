@@ -38,6 +38,32 @@ const postSchema = new mongoose.Schema({
     ref: "employers",
     required: true,
   },
+  applicants: [
+    {
+      applicant: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "users",
+        required: true,
+      },
+      status: {
+        type: String,
+        required: true,
+        default: "pending",
+      },
+      coverLetter: {
+        type: String,
+        required: true,
+      },
+      resumeUrl: {
+        type: String,
+        required: true,
+      },
+      resumePublicId: {
+        type: String,
+        required: true,
+      },
+    },
+  ],
   status: {
     type: String,
     default: "Active",
