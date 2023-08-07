@@ -24,7 +24,10 @@ const empRegister = async (req, res) => {
     await newEmp.save();
     res
       .status(200)
-      .json({ message: "REGISTRATION SUCCESSFULL, YOU CAN LOGIN AFTER VERIFICATION", created: true });
+      .json({
+        message: "REGISTRATION SUCCESSFULL, YOU CAN LOGIN AFTER VERIFICATION",
+        created: true,
+      });
   } catch (error) {
     console.log(error.message);
     res.status(500).json({ error: error.message, created: false });
@@ -34,7 +37,6 @@ const empRegister = async (req, res) => {
 const empLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
-
 
     const empData = await empModel.findOne({ email: email });
     console.log("vanno1");
@@ -52,8 +54,14 @@ const empLogin = async (req, res) => {
         .status(401)
         .json({ message: "invalid passowrd", login: false });
     } else if (!empData.verified) {
-      return res.status(401).json({message:"YOUR ACCOUNT IS UNDER VERIFICATION, PLEASE WAIT!"});
-    }else {
+      return res
+        .status(401)
+        .json({ message: "YOUR ACCOUNT IS UNDER VERIFICATION, PLEASE WAIT!" });
+    } else if (!empData.status) {
+      return res
+        .status(401)
+        .json({ message: "YOUR ACCOUNT IS BLOCKED!", login: false });
+    } else {
       const token = jwt.sign({ id: empData._id }, process.env.JWT_SECRET, {
         expiresIn: 300000,
       });
@@ -69,12 +77,12 @@ const empLogin = async (req, res) => {
 
 const googleLogin = async (req, res) => {
   try {
-    const { email,id } = req.body;
+    const { email, id } = req.body;
     const empData = await empModel.findOne({ email: email });
-    
+
     if (!empData) {
       return res.status(404).json({ message: "INVALID EMAIL", login: false });
-    }  else {
+    } else {
       const token = jwt.sign({ id: empData._id }, process.env.JWT_SECRET, {
         expiresIn: 300000,
       });
@@ -127,7 +135,9 @@ const forgotPassword = async (req, res) => {
 
     await user.save();
 
-    return res.status(200).json({message: "PASSWORD SUCCESSFULLY CHANGED!", success:true});
+    return res
+      .status(200)
+      .json({ message: "PASSWORD SUCCESSFULLY CHANGED!", success: true });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ success: false });
@@ -139,5 +149,5 @@ module.exports = {
   empLogin,
   isEmpAuth,
   forgotPassword,
-  googleLogin
+  googleLogin,
 };

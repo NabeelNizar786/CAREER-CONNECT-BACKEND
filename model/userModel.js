@@ -38,6 +38,11 @@ const userSchema = new mongoose.Schema({
   isGoogle: {
     type: Boolean,
   },
+  status:{
+    type:Boolean,
+    required: true,
+    default: true
+  },
   workExp: [
     {
       role: {

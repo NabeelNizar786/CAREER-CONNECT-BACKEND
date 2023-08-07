@@ -5,6 +5,10 @@ const jwt = require("jsonwebtoken");
 const tokenModel = require("../model/token");
 const crypto = require("crypto");
 const { log } = require("console");
+const {
+  uploadToCloudinary,
+  removeFromCloudinary,
+} = require("../config/cloudinary");
 
 const userRegister = async (req, res) => {
   try {
@@ -53,8 +57,11 @@ const userLogin = async (req, res) => {
       return res
         .status(401)
         .json({ message: "invalid passowrd", login: false });
+    } else if (!userData.status) {
+      return res
+        .status(401)
+        .json({ message: "YOUR ACCOUNT IS BLOCKED!", login: false });
     } else {
-
       const token = jwt.sign({ id: userData._id }, process.env.JWT_SECRET, {
         expiresIn: 3000000,
       });
@@ -62,7 +69,7 @@ const userLogin = async (req, res) => {
         login: true,
         message: "login successful",
         token: token,
-        userData: userData
+        userData: userData,
       });
     }
   } catch (error) {
@@ -73,7 +80,7 @@ const userLogin = async (req, res) => {
 
 const googleLogin = async (req, res) => {
   try {
-    const { email,id } = req.body;
+    const { email, id } = req.body;
     const userData = await userModel.findOne({ email: email });
 
     console.log(userData.email);
@@ -99,7 +106,7 @@ const googleLogin = async (req, res) => {
 
 const isUserAuth = async (req, res) => {
   try {
-    const userData = await userModel.findOne({ _id: req.userId }).lean()
+    const userData = await userModel.findOne({ _id: req.userId }).lean();
 
     if (!userData) {
       return res
@@ -107,7 +114,7 @@ const isUserAuth = async (req, res) => {
         .json({ message: "USER DOES NOT EXISTS", success: false });
     } else {
       delete userData.password;
-      
+
       return res.status(200).json({ success: true, userData: userData });
     }
   } catch (error) {
@@ -142,21 +149,205 @@ const forgotPassword = async (req, res) => {
   }
 };
 
-const updateUserAbout = async(req,res) => {
+const updateUserAbout = async (req, res) => {
   try {
-    const {about} = req.body;
+    const { about } = req.body;
     let userData = await userModel.findByIdAndUpdate(
-      {_id: req.userId},
-      {$set: {about: about}},
-      {new : true}
+      { _id: req.userId },
+      { $set: { about: about } },
+      { new: true }
     );
     return res.status(200).json({ success: true, userData: userData });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ success: false, error: "Server Error" });
   }
-}
+};
 
+const updateUserBasicInfo = async (req, res) => {
+  try {
+    const { Location, Phone, name } = req.body;
+
+    const userId = req.userId;
+
+    const userData = await userModel.findOneAndUpdate(
+      { _id: userId },
+      { $set: { location: Location, phone: Phone, name: name } },
+      { new: true }
+    );
+
+    return res.status(200).json({ success: true, userData });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ success: false, error: "Server Error" });
+  }
+};
+
+const addUserExp = async (req, res) => {
+  try {
+    const { exp, role, company } = req.body;
+
+    let userData = await userModel.findOne({ _id: req.userId });
+
+    const newExp = {
+      role: role,
+      company: company,
+      exp: exp,
+    };
+
+    userData.workExp.push(newExp);
+    await userData.save();
+
+    return res.status(200).json({ success: true, userData: userData });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ success: false, error: "Server Error" });
+  }
+};
+
+const addUserSkill = async (req, res) => {
+  try {
+    const skill = req.body;
+
+    let userData = await userModel.findOne({ _id: req.userId });
+    const newSkills = skill.filter((skill) => !userData.skills.includes(skill));
+    userData.skills.push(...skill);
+    await userData.save();
+
+    return res.status(200).json({ success: true, userData: userData });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ success: false, error: "Server Error" });
+  }
+};
+
+const dropUserSkill = async (req, res) => {
+  try {
+    let { skill } = req.body;
+    const userId = req.userId;
+
+    const userData = await userModel.findOneAndUpdate(
+      { _id: userId },
+      { $pull: { skills: skill } },
+      { new: true }
+    );
+
+    return res.status(200).json({ success: true, userData });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ success: false, error: "Server Error" });
+  }
+};
+
+const addUserEdu = async (req, res) => {
+  try {
+    const { course, Institute } = req.body;
+
+    let userData = await userModel.findOne({ _id: req.userId });
+
+    const newEdu = {
+      course: course,
+      institute: Institute,
+    };
+
+    userData.education.push(newEdu);
+    await userData.save();
+
+    return res.status(200).json({ success: true, userData: userData });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ success: false, error: "Server Error" });
+  }
+};
+
+const dropUserExp = async (req, res) => {
+  try {
+    let { id } = req.body;
+    const userId = req.userId;
+
+    const userData = await userModel.findOneAndUpdate(
+      { _id: userId },
+      { $pull: { workExp: { _id: id } } },
+      { new: true }
+    );
+
+    return res.status(200).json({ success: true, userData });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ success: false, error: "Server Error" });
+  }
+};
+
+const dropUserEdu = async (req, res) => {
+  try {
+    let { id } = req.body;
+    const userId = req.userId;
+
+    const userData = await userModel.findOneAndUpdate(
+      { _id: userId },
+      { $pull: { education: { _id: id } } },
+      { new: true }
+    );
+
+    return res.status(200).json({ success: true, userData });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ success: false, error: "Server Error" });
+  }
+};
+
+const changePassword = async (req, res) => {
+  try {
+    const { currPass, newPass } = req.body;
+
+    // const userData = await userModel.findOne({_id: req.userId});
+
+    const isMatch = await userModel.findOne({
+      password: sha256(currPass + process.env.PASSWORD_SALT),
+    });
+
+    if (isMatch) {
+      const updatedPass = sha256(newPass + process.env.PASSWORD_SALT);
+
+      await userModel
+        .updateOne({ _id: req.userId }, { $set: { password: updatedPass } })
+        .then(() => {
+          return res
+            .status(200)
+            .json({ success: true, message: "Password Changed Successfully" });
+        });
+    }
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ success: false, error: "Server Error" });
+  }
+};
+
+const changeUserImg = async (req, res) => {
+  try {
+    const userId = req.userId;
+
+    const image = req.file.path;
+    let user = await userModel.findOne({ _id: userId });
+    console.log(user);
+    if (user.imageId) {
+      const responseData = await removeFromCloudinary(user.imageId);
+    }
+
+    const data = await uploadToCloudinary(image, "profilePictures");
+    if (data) {
+      const userData = await userModel.findOneAndUpdate(
+        { _id: userId },
+        { $set: { image: data.url, imageId: data.public_id } },
+        { new: true }
+      );
+      return res.status(200).json({ success: true, userData });
+    }
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ success: false, error });
+  }
+};
 
 module.exports = {
   userRegister,
@@ -164,5 +355,14 @@ module.exports = {
   isUserAuth,
   forgotPassword,
   googleLogin,
-  updateUserAbout
+  updateUserAbout,
+  updateUserBasicInfo,
+  addUserExp,
+  addUserSkill,
+  dropUserSkill,
+  addUserEdu,
+  dropUserExp,
+  dropUserEdu,
+  changePassword,
+  changeUserImg,
 };

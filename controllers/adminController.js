@@ -120,11 +120,55 @@ const adminAuth = async (req, res) => {
   }
 };
 
+const changeUserStatus = async(req,res) => {
+  try {
+    const {id, status} = req.body;
+
+    const update = await userModel.updateOne(
+      {_id:id},
+      {$set:{status:status}}
+    );
+
+    if(update) {
+      const userData = await userModel.find({});
+      if(userData) {
+        res.status(200).json({message:'UPDATED', userData});
+      }
+    }
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ success: false });
+  }
+}
+
+const changeEmpStatus = async(req,res) => {
+  try {
+    const {id, status} = req.body;
+
+    const update = await empModel.updateOne(
+      {_id:id},
+      {$set:{status: status}}
+    );
+
+    if(update) {
+      const empData = await empModel.find({});
+      if(empData) {
+        res.status(200).json({message:"UPDATED", empData});
+      }
+    }
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ success: false });
+  }
+}
+
 module.exports = {
   adminLogin,
   adminAuth,
   userDetails,
   empDetails,
   empVerify,
-  verified
+  verified,
+  changeUserStatus,
+  changeEmpStatus
 };
