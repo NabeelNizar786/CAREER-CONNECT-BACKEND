@@ -1,6 +1,8 @@
 const empModel = require("../model/empModel");
 const sha256 = require("js-sha256");
 const jwt = require("jsonwebtoken");
+const {uploadToCloudinary,
+removeFromCloudinary} = require('../config/cloudinary');
 
 const empRegister = async (req, res) => {
   try {
@@ -67,7 +69,7 @@ const empLogin = async (req, res) => {
       });
       res
         .status(200)
-        .json({ login: true, message: "login successful", empData, token });
+        .json({ login: true, message: "login successful", empData:empData, token });
     }
   } catch (error) {
     console.log(error.message);
@@ -144,10 +146,89 @@ const forgotPassword = async (req, res) => {
   }
 };
 
+const updateAbout = async(req,res) => {
+  try {
+    const {about} = req.body;
+    let empId = req.empId;
+
+    const empData = await empModel.findOneAndUpdate(
+      {_id: empId},
+      {$set:{about:about}},
+      {new: true}
+    );
+
+    if(empData) {
+      return res
+        .status(200)
+        .json({ success: true, message: "UPDATED", empData });
+    }
+    return res
+      .status(404)
+      .json({ success: false, message: "SOMETHING WENT WRONG!!" });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ success: false, error: "SERVER ERROR" });
+  }
+}
+
+const updateBasicInfo = async(req,res) => {
+  try {
+    const {Location, Phone, name} = req.body;
+    const empId = req.empId;
+
+    const empData = await empModel.findOneAndUpdate(
+      { _id: empId },
+      { $set: { location: Location, phone: Phone, companyName: name } },
+      { new: true }
+    );
+
+    console.log(empData);
+
+    if(!empData) {
+      return res
+        .status(404)
+        .json({ success: false, message: "SOMETHING WENT WRONG!!" });
+    }
+    console.log(empData, "new");
+    return res.status(200).json({ success: true, message: "UPDATED", empData });
+  } catch (error) {
+    return res.status(500).json({ success: false, error: "SERVER ERROR" });
+  }
+}
+
+const changeImg = async(req,res) => {
+  try {
+    const empId = req.empId;
+    const image = req.file.path;
+
+    let emp = await empModel.findOne({_id:empId});
+
+    if(emp.imageId) {
+      const responseData = await removeFromCloudinary(emp.imageId);
+    }
+
+    const data = await uploadToCloudinary(image, 'profilePictures');
+
+    if(data) {
+      const empData = await empModel.findOneAndUpdate(
+        {_id:empId},
+        {$set:{image: data.url, imageId: data.public_id}},
+        {new: true}
+      );
+      return res.status(200).json({success:true, empData})
+    }
+  } catch (error) {
+    return res.status(500).json({ success: false, error: "SERVER ERROR" });
+  }
+}
+
 module.exports = {
   empRegister,
   empLogin,
   isEmpAuth,
   forgotPassword,
   googleLogin,
+  updateAbout,
+  updateBasicInfo,
+  changeImg
 };
