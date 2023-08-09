@@ -62,7 +62,7 @@ const userLogin = async (req, res) => {
         .status(401)
         .json({ message: "YOUR ACCOUNT IS BLOCKED!", login: false });
     } else {
-      const token = jwt.sign({ id: userData._id }, process.env.JWT_SECRET, {
+      const token = jwt.sign({ id: userData._id, role: userData.role }, process.env.JWT_SECRET, {
         expiresIn: 3000000,
       });
       res.status(200).json({
