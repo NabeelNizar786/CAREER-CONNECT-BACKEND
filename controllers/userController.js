@@ -12,16 +12,17 @@ const {
 
 const userRegister = async (req, res) => {
   try {
-    let { username, email, password, phone } = req.body;
-
+    let { username, email, password, currentPassword, phone } = req.body;
+    console.log(username, email, password, currentPassword, phone);
     const exists = await userModel.findOne({ email: email });
 
     if (exists) {
       return res
         .status(200)
         .json({ exists: true, message: "email already exists" });
-    }
-
+    
+      }
+      
     const newUser = new userModel({
       username: username,
       email: email,
@@ -62,9 +63,13 @@ const userLogin = async (req, res) => {
         .status(401)
         .json({ message: "YOUR ACCOUNT IS BLOCKED!", login: false });
     } else {
-      const token = jwt.sign({ id: userData._id, role: userData.role }, process.env.JWT_SECRET, {
-        expiresIn: 3000000,
-      });
+      const token = jwt.sign(
+        { id: userData._id, role: userData.role },
+        process.env.JWT_SECRET,
+        {
+          expiresIn: 3000000,
+        }
+      );
       res.status(200).json({
         login: true,
         message: "login successful",
@@ -104,19 +109,23 @@ const googleLogin = async (req, res) => {
   }
 };
 
+
 const isUserAuth = async (req, res) => {
   try {
     const userData = await userModel.findOne({ _id: req.userId }).lean();
-
     if (!userData) {
       return res
         .status(404)
         .json({ message: "USER DOES NOT EXISTS", success: false });
+    } else if (!userData.status) {
+      return res
+        .status(404)
+        .json({ message: "YOUR ACCOUNT IS BLOCKED!", success: false, userData:userData });
     } else {
       delete userData.password;
-
       return res.status(200).json({ success: true, userData: userData });
     }
+    
   } catch (error) {
     console.log(error);
     return res.status(500).json({ success: false });

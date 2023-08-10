@@ -8,11 +8,12 @@ const {
   googleLogin,
   updateAbout,
   updateBasicInfo,
-  changeImg
+  changeImg,
+  getUserData
 } = require('../controllers/empController');
 
 const {empAuthentication} = require('../middlewares/empAuth');
-const { createPost, getPostData, getActivePostData } = require('../controllers/postController');
+const { createPost, getPostData, getActivePostData, getSinglePostData, changeApplicationStatus } = require('../controllers/postController');
 const { skillDetails } = require('../controllers/skillController');
 const { cityDetails } = require('../controllers/cityController');
 const upload = require('../middlewares/multer');
@@ -31,5 +32,11 @@ router.get('/getActivePostData', empAuthentication, getActivePostData);
 router.post('/updateAbout', empAuthentication, updateAbout);
 router.post('/updateBasicInfo', empAuthentication, updateBasicInfo);
 router.post('/changeImage', empAuthentication, upload.single('image'), changeImg);
+router.get('/getPostData', empAuthentication, getPostData);
+router.get('/getSinglePostData/:postId', empAuthentication, getSinglePostData );
+router.post('/changeApplicationStatus/:postId/:applicationId/:newStatus/:userId',
+empAuthentication,
+changeApplicationStatus
+);
 
 module.exports = router;

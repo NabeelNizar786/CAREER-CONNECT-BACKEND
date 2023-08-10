@@ -19,7 +19,7 @@ module.exports=async(email,subject,text)=>{
           from:process.env.USER,
           to:email,
           subject:subject,
-          text:"YOUR CAREER CONNECT EMPLOYEE ACCOUNT VERIFICATION IS SUCCESSFULL!"
+          text:text
       })
       console.log("email sent successfully");
   } catch (error) {

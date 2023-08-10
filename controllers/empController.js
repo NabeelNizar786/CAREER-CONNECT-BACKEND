@@ -3,6 +3,7 @@ const sha256 = require("js-sha256");
 const jwt = require("jsonwebtoken");
 const {uploadToCloudinary,
 removeFromCloudinary} = require('../config/cloudinary');
+const userModel = require('../model/userModel');
 
 const empRegister = async (req, res) => {
   try {
@@ -222,6 +223,25 @@ const changeImg = async(req,res) => {
   }
 }
 
+const getUserData = async(req,res) => {
+  try {
+    let userId = req.params.userId;
+
+    const userData = await userModel.findOne({ _id: userId });
+    if (userData) {
+      return res
+        .status(200)
+        .json({ login: true, message: "login successful", userData });
+    } else {
+      return res
+        .status(404)
+        .json({ message: "userData not found", success: false });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: error.message, success: false });
+  }
+}
 module.exports = {
   empRegister,
   empLogin,
@@ -230,5 +250,6 @@ module.exports = {
   googleLogin,
   updateAbout,
   updateBasicInfo,
-  changeImg
+  changeImg,
+  getUserData
 };

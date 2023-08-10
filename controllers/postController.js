@@ -1,6 +1,8 @@
 const postModel = require("../model/postModal");
 const empModal = require("../model/empModel");
 const {uploadToCloudinary} = require('../config/cloudinary');
+const sendMail = require('../utils/nodeMailer');
+const userModel = require('../model/userModel');
 
 const createPost = async (req, res) => {
   try {
@@ -70,6 +72,28 @@ const getPostData = async (req, res) => {
   }
 };
 
+const getSinglePostData = async (req,res) => {
+  try {
+    let postId = req.params.postId;
+
+    const postData = await postModel.findOne({_id: postId}).populate("applicants.applicant");
+
+    if (postData) {
+      return res
+        .status(200)
+        .json({ success: true, message: "data obtained", postData });
+    } else {
+      return res
+        .status(404)
+        .json({ success: false, message: "data not found" });
+    }
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ success: false, message: "something went wrong" });
+  }
+}
+
 const getActivePostData = async (req, res) => {
   try {
     let id = req.empId;
@@ -92,7 +116,9 @@ const userGetAllPost = async (req, res) => {
   try {
     let postData = await postModel
       .find({ status: "Active", block: { $ne: true } })
-      .populate("empId");
+      .populate("empId").sort({ createdAt: -1 });
+
+      console.log(postData);
     if (postData) {
       res.status(200).json({ data: true, message: "data obtained", postData });
     } else {
@@ -164,6 +190,53 @@ const applyJob = async(req, res) => {
   }
   }
 
+  const changeApplicationStatus = async(req,res) => {
+    try {
+      const {postId, applicationId, newStatus, userId} = req.params;
+      console.log(postId, applicationId, newStatus, userId);
+
+      let postData = await postModel.findOneAndUpdate(
+        {_id:postId, "applicants._id": applicationId},
+        {$set: {"applicants.$.status" : newStatus}},
+        {new:true}
+      )
+      .populate("applicants.applicant")
+      .populate("empId");
+
+      if(!postData) {
+        return res
+        .status(404)
+        .json({ success: false, message: "post not found" });
+      }
+      
+      console.log('Before userData retrieval');
+     const userData = await userModel.findByIdAndUpdate({_id: userId});
+console.log('After userData retrieval');
+console.log(userData);
+
+      let message = "";
+
+      if(newStatus == "Selected") {
+        message = `Congratulations  on your selection! We are thrilled to inform you that your application for the ${postData.role} position has been chosen by ${postData.empId.companyName}.
+       Your skills and experience stood out among the applicants, and we believe you will be a valuable addition to our team.
+         Welcome aboard!`;
+      } else if (newStatus == "Rejected") {
+        message = `We regret to inform you that your job application for the ${postData.role} position has been rejected by ${postData.empId.companyName}.
+        We appreciate your interest in our company and wish you the best in your future endeavors.`;
+      }
+
+      await sendMail(userData.email, "Application Status", message);
+
+      return res
+      .status(200)
+      .json({ success: true, message: "updated successfully", postData });
+    } catch (error) {
+      return res
+      .status(500)
+      .json({ success: false, message: "something went wrong" });
+    }
+  }
+
 
 module.exports = {
   createPost,
@@ -171,5 +244,7 @@ module.exports = {
   getActivePostData,
   userGetAllPost,
   singleJobDetails,
-  applyJob
+  applyJob,
+  getSinglePostData,
+  changeApplicationStatus
 };

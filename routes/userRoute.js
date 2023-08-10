@@ -17,6 +17,7 @@ const {
   dropUserEdu,
   changePassword,
   changeUserImg,
+  userStatus,
 
 } = require('../controllers/userController');
 const { userGetAllPost, singleJobDetails, applyJob } = require("../controllers/postController");

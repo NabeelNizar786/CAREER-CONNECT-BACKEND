@@ -64,6 +64,15 @@ const postSchema = new mongoose.Schema({
       },
     },
   ],
+  invites:[
+    {
+      userId: {
+        type:mongoose.Schema.Types.ObjectId,
+        ref:"users",
+        required:true,
+      },
+    },
+  ],
   status: {
     type: String,
     default: "Active",
