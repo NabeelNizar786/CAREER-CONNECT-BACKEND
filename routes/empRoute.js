@@ -9,7 +9,9 @@ const {
   updateAbout,
   updateBasicInfo,
   changeImg,
-  getUserData
+  getUserData,
+  premium,
+  updatePremium
 } = require('../controllers/empController');
 
 const {empAuthentication} = require('../middlewares/empAuth');
@@ -38,5 +40,9 @@ router.post('/changeApplicationStatus/:postId/:applicationId/:newStatus/:userId'
 empAuthentication,
 changeApplicationStatus
 );
+
+//payment
+router.post('/subscription', empAuthentication, premium);
+router.post('/verifyPayment/:empId', empAuthentication, updatePremium);
 
 module.exports = router;

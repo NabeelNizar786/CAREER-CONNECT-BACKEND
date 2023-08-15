@@ -1,9 +1,15 @@
 const empModel = require("../model/empModel");
 const sha256 = require("js-sha256");
 const jwt = require("jsonwebtoken");
+require('dotenv').config()
 const {uploadToCloudinary,
 removeFromCloudinary} = require('../config/cloudinary');
 const userModel = require('../model/userModel');
+const stripe = require('stripe')(process.env.STRIPE_KEY);
+const BASE_URL = process.env.BASE_URL
+const PREMIUM_PRICE_INR = 1000 * 10;
+const {v4: uuidv4} = require("uuid");
+const subscriptionModel = require("../model/subscriptionModel");
 
 const empRegister = async (req, res) => {
   try {
@@ -242,6 +248,67 @@ const getUserData = async(req,res) => {
     res.status(500).json({ error: error.message, success: false });
   }
 }
+
+const premium = async(req,res) => {
+  try {
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      mode: "payment",
+      line_items: [
+        {
+          price_data: {
+            currency: "inr",
+            product_data: {
+              name: "JobMatch Premium",
+            },
+            unit_amount: PREMIUM_PRICE_INR,
+          },
+          quantity: 1,
+        },
+      ],
+      success_url: `${BASE_URL}/employer/paymentSuccess/${req.empId}`,
+      cancel_url: `${BASE_URL}/employer/subscription`,
+    });
+
+    res.status(200).json({ url: session.url });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Something went wrong." });
+  }
+}
+
+const updatePremium = async(req,res) => {
+  try {
+    const {empId} = req.params;
+    const empData = await empModel.findOneAndUpdate(
+      {_id:empId},
+      {$set: {isPremium: true}},
+      {new: true}
+    );
+
+    if (!empData) {
+      return res.status(404).json({ message: "Employer data not found" });
+    }
+
+    const orderId = uuidv4();
+    const subscription = new subscriptionModel({
+      empId: empId,
+      amount: 1000,
+      pack: "premium",
+      orderId: orderId,
+    });
+
+    const savedSubscription = await subscription.save();
+
+    if(savedSubscription) {
+      return res.status(200).json({ empData });
+    }
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error });
+  }
+}
+
 module.exports = {
   empRegister,
   empLogin,
@@ -251,5 +318,7 @@ module.exports = {
   updateAbout,
   updateBasicInfo,
   changeImg,
-  getUserData
+  getUserData,
+  premium,
+  updatePremium
 };
