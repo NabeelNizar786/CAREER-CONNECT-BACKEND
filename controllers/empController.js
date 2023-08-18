@@ -6,7 +6,7 @@ const {uploadToCloudinary,
 removeFromCloudinary} = require('../config/cloudinary');
 const userModel = require('../model/userModel');
 const stripe = require('stripe')(process.env.STRIPE_KEY);
-const BASE_URL = process.env.BASE_URL
+const BASE1_URL = process.env.BASE1_URL
 const PREMIUM_PRICE_INR = 1000 * 10;
 const {v4: uuidv4} = require("uuid");
 const subscriptionModel = require("../model/subscriptionModel");
@@ -266,8 +266,8 @@ const premium = async(req,res) => {
           quantity: 1,
         },
       ],
-      success_url: `${BASE_URL}/employer/paymentSuccess/${req.empId}`,
-      cancel_url: `${BASE_URL}/employer/subscription`,
+      success_url: `${BASE1_URL}employer/paymentSuccess/${req.empId}`,
+      cancel_url: `${BASE1_URL}/employer/subscription`,
     });
 
     res.status(200).json({ url: session.url });

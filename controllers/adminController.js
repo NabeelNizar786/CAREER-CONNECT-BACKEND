@@ -3,6 +3,7 @@ const userModel = require("../model/userModel");
 const empModel = require("../model/empModel");
 const jwt = require("jsonwebtoken");
 const sendMail = require('../utils/nodeMailer');
+const subscriptionModel = require('../model/subscriptionModel');
 
 const adminLogin = async (req, res) => {
   try {
@@ -162,6 +163,20 @@ const changeEmpStatus = async(req,res) => {
   }
 }
 
+const adminGetSubscriptionDetails = async (req, res) => {
+  try {
+    const data = await subscriptionModel.find({}).populate("empId");
+    if (data) {
+      return res.status(200).json({ data, message: "data obtained" });
+    } else {
+      return res.status(404).json({ message: "no data found" });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error });
+  }
+};
+
 module.exports = {
   adminLogin,
   adminAuth,
@@ -170,5 +185,6 @@ module.exports = {
   empVerify,
   verified,
   changeUserStatus,
-  changeEmpStatus
+  changeEmpStatus,
+  adminGetSubscriptionDetails
 };
