@@ -15,6 +15,10 @@ const subscriptionSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    paymentMethod: {
+      type: String,
+      required: true,
+    },
     orderId: {
       type: String,
       required: true,

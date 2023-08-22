@@ -115,14 +115,19 @@ const getActivePostData = async (req, res) => {
 const userGetAllPost = async (req, res) => {
   try {
     let postData = await postModel
-      .find({ status: "Active", block: { $ne: true } })
-      .populate("empId").sort({ createdAt: -1 });
+      .find({ status: "Active" })
+      .populate({
+        path: "empId",
+        match: { status: { $ne: false } } // Exclude blocked employers
+      })
+      .sort({ createdAt: -1 });
 
-      console.log(postData);
-    if (postData) {
-      res.status(200).json({ data: true, message: "data obtained", postData });
+    postData = postData.filter(post => post.empId !== null); // Remove posts without employers
+
+    if (postData.length > 0) {
+      res.status(200).json({ data: true, message: "Data obtained", postData });
     } else {
-      res.status(404).json({ data: false, message: "no post found" });
+      res.status(404).json({ data: false, message: "No posts found" });
     }
   } catch (error) {
     console.log(error);

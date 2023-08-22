@@ -295,6 +295,7 @@ const updatePremium = async(req,res) => {
       empId: empId,
       amount: 1000,
       pack: "premium",
+      paymentMethod: "CreditCard",
       orderId: orderId,
     });
 
