@@ -114,18 +114,26 @@ const getActivePostData = async (req, res) => {
 
 const userGetAllPost = async (req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1; // Get page number from query parameter (default to 1)
+    const limit = parseInt(req.query.limit) || 3; // Get limit from query parameter (default to 10)
+    const skip = (page - 1) * limit; // Calculate number of documents to skip
+
     let postData = await postModel
       .find({ status: "Active" })
       .populate({
         path: "empId",
-        match: { status: { $ne: false } } // Exclude blocked employers
+        match: { status: { $ne: false } }
       })
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
 
-    postData = postData.filter(post => post.empId !== null); // Remove posts without employers
+      const totalCount = await postModel.countDocuments({ status: "Active" });
+
+    postData = postData.filter(post => post.empId !== null);
 
     if (postData.length > 0) {
-      res.status(200).json({ data: true, message: "Data obtained", postData });
+      res.status(200).json({ data: true, message: "Data obtained", postData, page, limit, totalCount});
     } else {
       res.status(404).json({ data: false, message: "No posts found" });
     }
