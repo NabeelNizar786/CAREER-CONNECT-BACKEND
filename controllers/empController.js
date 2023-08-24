@@ -249,6 +249,34 @@ const getUserData = async(req,res) => {
   }
 }
 
+const empUserSearch = async (req, res) => {
+  try {
+    const { skill } = req.body;
+
+    if (skill === "") {
+      const userData = await userModel.find({});
+      if (userData) {
+        return res.status(200).json({ success: true, userData });
+      } else {
+        return res.status(404).json({ success: true, userData: [] });
+      }
+    } else {
+      const userData = await userModel.find({ skills: { $in: [skill] } });
+      if (userData) {
+        return res.status(200).json({ success: true, userData });
+      } else {
+        return res.status(200).json({ success: true, userData: [] });
+      }
+    }
+  } catch (error) {
+    // Handle error
+    console.error(error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error" });
+  }
+};
+
 const premium = async(req,res) => {
   try {
     const session = await stripe.checkout.sessions.create({
@@ -321,5 +349,6 @@ module.exports = {
   changeImg,
   getUserData,
   premium,
-  updatePremium
+  updatePremium,
+  empUserSearch
 };

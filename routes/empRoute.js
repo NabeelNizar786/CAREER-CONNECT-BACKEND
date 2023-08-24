@@ -11,11 +11,12 @@ const {
   changeImg,
   getUserData,
   premium,
-  updatePremium
+  updatePremium,
+  empUserSearch
 } = require('../controllers/empController');
 
 const {empAuthentication} = require('../middlewares/empAuth');
-const { createPost, getPostData, getActivePostData, getSinglePostData, changeApplicationStatus } = require('../controllers/postController');
+const { createPost, getPostData, getActivePostData, getSinglePostData, changeApplicationStatus, editPost } = require('../controllers/postController');
 const { skillDetails } = require('../controllers/skillController');
 const { cityDetails } = require('../controllers/cityController');
 const upload = require('../middlewares/multer');
@@ -26,6 +27,7 @@ router.post('/googleLogin', googleLogin);
 router.get('/empAuth', empAuthentication, isEmpAuth);
 router.patch('/forgotPass', forgotPassword);
 router.post('/createPost', empAuthentication, createPost);
+router.post("/editPost/:id", empAuthentication, editPost);
 router.get('/getPostData', empAuthentication, getPostData);
 router.get('/skillData', empAuthentication, skillDetails);
 router.get('/cityData',empAuthentication, cityDetails);
@@ -40,6 +42,7 @@ router.post('/changeApplicationStatus/:postId/:applicationId/:newStatus/:userId'
 empAuthentication,
 changeApplicationStatus
 );
+router.post('/empSearchUser', empAuthentication, empUserSearch)
 
 //payment
 router.post('/subscription', empAuthentication, premium);

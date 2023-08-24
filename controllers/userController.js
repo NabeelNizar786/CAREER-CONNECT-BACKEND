@@ -93,7 +93,7 @@ const googleLogin = async (req, res) => {
     if (!userData) {
       return res.status(404).json({ message: "INVALID EMAIL", login: false });
     } else {
-      const token = jwt.sign({ id: userData._id }, process.env.JWT_SECRET, {
+      const token = jwt.sign({ id: userData._id, role: userData.role }, process.env.JWT_SECRET, {
         expiresIn: 300000,
       });
       res.status(200).json({

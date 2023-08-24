@@ -56,6 +56,62 @@ const createPost = async (req, res) => {
   }
 };
 
+const editPost = async (req, res) => {
+  try {
+    const {
+      id,
+      role,
+      location,
+      jobType,
+      ctc,
+      exp,
+      vacancy,
+      description,
+      skills,
+      additionalSkills,
+    } = req.body;
+
+    if (!id) {
+      return res
+        .status(400)
+        .json({ error: true, message: "Post ID is required" });
+    }
+
+    // Find the post by ID
+    const post = await postModel.findById(id);
+
+    if (!post) {
+      return res.status(404).json({ error: true, message: "Post not found" });
+    }
+
+    // Update the post fields
+    post.role = role;
+    post.location = location;
+    post.jobtype = jobType;
+    post.ctc = ctc;
+    post.minimumExp = exp;
+    post.vacancy = vacancy;
+    post.skills = skills;
+    post.additionalSkills = additionalSkills;
+    post.jobDescription = description;
+
+    await post.save();
+
+    let empId = req.empId;
+    let postData = await postModel.find({ empId: empId }).populate("empId");
+    if (postData) {
+      return res.status(200).json({
+        success: true,
+        message: "Post updated successfully",
+        postData,
+      });
+    }
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ error: true, message: error.message });
+  }
+};
+
 const getPostData = async (req, res) => {
   try {
     let id = req.empId;
@@ -259,5 +315,6 @@ module.exports = {
   singleJobDetails,
   applyJob,
   getSinglePostData,
-  changeApplicationStatus
+  changeApplicationStatus,
+  editPost
 };
