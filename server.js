@@ -16,7 +16,7 @@ configureSocket(server);
 
 //cors
 app.use(cors({ 
-  origin: [process.env.BASE_URL],
+  origin: ["https://careerconnects.netlify.app"],
   methods: ["GET", "POST","PATCH"],
   credentials: true
 }));
