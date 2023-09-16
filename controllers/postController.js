@@ -216,6 +216,25 @@ const singleJobDetails = async (req, res) => {
   }
 };
 
+const InvitedJobs = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const postData = await postModel
+      .find({ "invites.userId": userId })
+      .populate("empId");
+    if (postData) {
+      return res.status(200).json({ success: true, postData });
+    } else {
+      return res.status(200).json({ success: true, postDat: [] });
+    }
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(500)
+      .json({ success: false, error, message: "internal server error" });
+  }
+};
+
 const applyJob = async(req, res) => {
   try {
     const resume = req.file.path;
@@ -258,6 +277,63 @@ const applyJob = async(req, res) => {
     .json({ success: false, message: "SOMETHING WENT WRONG" });
   }
   }
+
+  const userApplications = async (req, res) => {
+    try {
+      const userId = req.userId;
+      const status = req.params.status;
+      const postData = await postModel
+        .find({
+          applicants: {
+            $elemMatch: {
+              applicant: userId,
+              status: status,
+            },
+          },
+        })
+        .populate("empId");
+      if (postData) {
+        res.status(200).json({ success: true, postData });
+      } else {
+        res.status(200).json({ success: true, postData: [{}] });
+      }
+    } catch (error) {
+      console.log(error);
+      return res
+        .status(500)
+        .json({ success: false, message: "something went wrong" });
+    }
+  };
+
+  const empUserInvite = async (req, res) => {
+    try {
+      console.log(req.body);
+      const { userId, postId } = req.body;
+      const postData = await postModel.findOne({ _id: postId });
+      const alreadyInvited = postData.invites.some(
+        (invite) => invite.userId.toString() === userId
+      );
+      if (alreadyInvited) {
+        return res
+          .status(200)
+          .json({ success: false, message: "User already invited", postData });
+      }
+      const newUser = {
+        userId: userId,
+      };
+      postData.invites.push(newUser);
+      await postData.save();
+      console.log(postData);
+      return res
+        .status(200)
+        .json({ succes: true, message: "invited successfully", postData });
+    } catch (error) {
+      console.log(error);
+      return res
+        .status(500)
+        .json({ success: false, message: "internal server error" });
+    }
+  };
 
   const changeApplicationStatus = async(req,res) => {
     try {
@@ -316,5 +392,8 @@ module.exports = {
   applyJob,
   getSinglePostData,
   changeApplicationStatus,
-  editPost
+  editPost,
+  InvitedJobs,
+  userApplications,
+  empUserInvite
 };

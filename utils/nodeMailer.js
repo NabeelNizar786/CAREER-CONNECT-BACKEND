@@ -8,7 +8,7 @@ module.exports=async(email,subject,text)=>{
           host:process.env.HOST,
           service:process.env.SERVICE,
           port:Number(process.env.EMAIL_PORT),
-          secure:false,
+          secure:true,
           auth:{
               user:process.env.USER,
               pass:process.env.PASS

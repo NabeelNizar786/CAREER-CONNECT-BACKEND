@@ -18,12 +18,15 @@ const {
   changePassword,
   changeUserImg,
   userStatus,
+  userGetEmpDetails,
 
 } = require('../controllers/userController');
-const { userGetAllPost, singleJobDetails, applyJob } = require("../controllers/postController");
+const { userGetAllPost, singleJobDetails, applyJob, InvitedJobs, userApplications } = require("../controllers/postController");
 const {cityDetails} = require('../controllers/cityController');
 const {skillDetails} = require('../controllers/skillController');
 const upload = require('../middlewares/multer');
+const { createChat, userChat, findChat } = require("../controllers/chatController");
+const { addMessage, getMessages } = require("../controllers/messageController");
 
 router.post('/register', userRegister);
 router.post('/login', userLogin);
@@ -45,6 +48,24 @@ router.post("/dropUserExp", userAuthentication, dropUserExp);
 router.post("/dropUserEdu", userAuthentication, dropUserEdu);
 router.post('/changeUserPassword', userAuthentication, changePassword);
 router.post('/changeUserImage', userAuthentication, upload.single('image'), changeUserImg);
+router.post("/userGetEmpDetails/:empId", userAuthentication, userGetEmpDetails);
+router.get("/invitedjobs", userAuthentication, InvitedJobs);
+router.get(
+  "/getUserApplications/:status",
+  userAuthentication,
+  userApplications
+);
+
+//chatRoutes
+
+router.post("/createChat", createChat);
+router.get("/getChat/:userId", userChat);
+router.get("/findChat/:firstId/:secondId", findChat);
+
+//messages
+
+router.post("/addMessage", addMessage);
+router.get("/getMessages/:chatId", getMessages);
 
 
 

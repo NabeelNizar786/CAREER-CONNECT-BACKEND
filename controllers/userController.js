@@ -358,6 +358,24 @@ const changeUserImg = async (req, res) => {
   }
 };
 
+const userGetEmpDetails = async (req, res) => {
+  try {
+    let empId = req.params.empId;
+    const empData = await empModel.findOne({ _id: empId });
+    if (!empData)
+      return res
+        .status(404)
+        .json({ success: false, message: "not data found" });
+
+    return res
+      .status(200)
+      .json({ success: true, message: "data obtained", empData });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ success: false, error: "Server Error" });
+  }
+};
+
 module.exports = {
   userRegister,
   userLogin,
@@ -374,4 +392,5 @@ module.exports = {
   dropUserEdu,
   changePassword,
   changeUserImg,
+  userGetEmpDetails
 };

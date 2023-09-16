@@ -1,13 +1,18 @@
 const express = require('express');
 const app = express();
-require("dotenv").config()  ;
+require("dotenv").config();
 const dbConfig = require('./config/dbConfig');
 app.use(express.json());
+const server = require('http').createServer(app);
+const {configureSocket} = require('./config/socket');
 const userRoute = require('./routes/userRoute');
 const empRoute = require('./routes/empRoute');
 const adminRoute = require('./routes/adminRoute');
 const cors = require("cors");
 
+//socketSetup
+
+configureSocket(server);
 
 //cors
 app.use(cors({ 
@@ -21,5 +26,5 @@ app.use('/employer', empRoute);
 app.use('/admin', adminRoute);
 const port = process.env.PORT || 5000;
 
-app.listen(port, () => console.log(`Listening on port ${port}`));
+server.listen(port, () => console.log(`Listening on port ${port}`));
 
