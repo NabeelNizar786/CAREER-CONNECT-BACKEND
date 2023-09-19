@@ -1,9 +1,10 @@
 const adminModel = require("../model/adminModel");
 const userModel = require("../model/userModel");
 const empModel = require("../model/empModel");
+const postModel = require("../model/postModal");
 const jwt = require("jsonwebtoken");
-const sendMail = require('../utils/nodeMailer');
-const subscriptionModel = require('../model/subscriptionModel');
+const sendMail = require("../utils/nodeMailer");
+const subscriptionModel = require("../model/subscriptionModel");
 
 const adminLogin = async (req, res) => {
   try {
@@ -64,35 +65,31 @@ const empDetails = async (req, res) => {
   }
 };
 
-const empVerify = async(req,res)  => {
+const empVerify = async (req, res) => {
   try {
-    const empData = await empModel.find({verified:false});
-    if(empData) {
-
-      res.status(200).json({empData:empData})
+    const empData = await empModel.find({ verified: false });
+    if (empData) {
+      res.status(200).json({ empData: empData });
     } else {
-
-      res.status(201).json({message:"NO USERS"});
+      res.status(201).json({ message: "NO USERS" });
     }
-  } catch (error) {
-    
-  }
-}
+  } catch (error) {}
+};
 
-const verified = async(req,res) => {
+const verified = async (req, res) => {
   try {
-    const {email} = req.body;
+    const { email } = req.body;
 
     console.log(email);
     const verifyEmp = await empModel.updateOne(
-      {email:email},
-      {$set:{verified: true}}
+      { email: email },
+      { $set: { verified: true } }
     );
-    await sendMail(email,"YOUR ACCOUNT VERIFIACTION IS SUCCESSFULL!");
+    await sendMail(email, "YOUR ACCOUNT VERIFIACTION IS SUCCESSFULL!");
 
-    if(verifyEmp){
-      const empData = await empModel.find({verified:false});
-      if(empData) {
+    if (verifyEmp) {
+      const empData = await empModel.find({ verified: false });
+      if (empData) {
         res.status(200).json({ message: "updated", empData });
       }
     }
@@ -100,9 +97,7 @@ const verified = async(req,res) => {
     console.log(error);
     return res.status(500).json({ success: false });
   }
-}
-
-
+};
 
 const adminAuth = async (req, res) => {
   try {
@@ -121,45 +116,115 @@ const adminAuth = async (req, res) => {
   }
 };
 
-const changeUserStatus = async(req,res) => {
+const changeUserStatus = async (req, res) => {
   try {
-    const {id, status} = req.body;
+    const { id, status } = req.body;
 
     const update = await userModel.updateOne(
-      {_id:id},
-      {$set:{status:status}}
+      { _id: id },
+      { $set: { status: status } }
     );
 
-    if(update) {
+    if (update) {
       const userData = await userModel.find({});
-      if(userData) {
-        res.status(200).json({message:'UPDATED', userData});
+      if (userData) {
+        res.status(200).json({ message: "UPDATED", userData });
       }
     }
   } catch (error) {
     console.log(error);
     return res.status(500).json({ success: false });
   }
-}
+};
 
-const changeEmpStatus = async(req,res) => {
+const changeEmpStatus = async (req, res) => {
   try {
-    const {id, status} = req.body;
+    const { id, status } = req.body;
 
     const update = await empModel.updateOne(
-      {_id:id},
-      {$set:{status: status}}
+      { _id: id },
+      { $set: { status: status } }
     );
 
-    if(update) {
+    if (update) {
       const empData = await empModel.find({});
-      if(empData) {
-        res.status(200).json({message:"UPDATED", empData});
+      if (empData) {
+        res.status(200).json({ message: "UPDATED", empData });
       }
     }
   } catch (error) {
     console.log(error);
     return res.status(500).json({ success: false });
+  }
+};
+
+const userCount = async (req, res) => {
+  try {
+    const count = await userModel.countDocuments({});
+    res.json({ count, message: "user count obtained" }); // Sending the count as JSON response
+  } catch (error) {
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+const empCount = async (req, res) => {
+  try {
+    const count = await empModel.countDocuments({});
+    res.json({ count, message: "emp count obtained" }); // Sending the count as JSON response
+  } catch (error) {
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+const revenue = async (req, res) => {
+  try {
+    const count = await empModel.countDocuments({
+      isPremium: true,
+    });
+    res.json({ revenue: count, message: "revenue count obtained" }); // Sending the count as JSON response
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+const getPostsByDate = async (req, res) => {
+  try {
+    const postsByDate = await postModel.aggregate([
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+    res.json({ postsByDate, message: "Posts by date obtained" }); // Sending the result as JSON response
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+const employersByDate = async (req, res) => {
+  try {
+    const empByDate = await empModel.aggregate([
+      {
+        $group:{
+          _id: {
+            year: {$year: '$createdAt'},
+            month: {$month: '$createdAt'},
+            day: {$dayOfMonth: '$createdAt'},
+          },
+          count: {$sum: 1},
+        },
+      },
+      {
+        $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1 },
+      },
+    ]);
+
+    res.json({empByDate, message: "dataObtained"});
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 }
 
@@ -186,5 +251,10 @@ module.exports = {
   verified,
   changeUserStatus,
   changeEmpStatus,
-  adminGetSubscriptionDetails
+  adminGetSubscriptionDetails,
+  userCount,
+  empCount,
+  revenue,
+  getPostsByDate,
+  employersByDate
 };

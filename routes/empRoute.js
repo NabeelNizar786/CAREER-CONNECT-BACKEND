@@ -16,7 +16,7 @@ const {
 } = require('../controllers/empController');
 
 const {empAuthentication} = require('../middlewares/empAuth');
-const { createPost, getPostData, getActivePostData, getSinglePostData, changeApplicationStatus, editPost, empUserInvite } = require('../controllers/postController');
+const { createPost, getPostData, getActivePostData, getSinglePostData, changeApplicationStatus, editPost, empUserInvite, deletePost, completePost } = require('../controllers/postController');
 const { skillDetails } = require('../controllers/skillController');
 const { cityDetails } = require('../controllers/cityController');
 const upload = require('../middlewares/multer');
@@ -35,6 +35,8 @@ router.get('/skillData', empAuthentication, skillDetails);
 router.get('/cityData',empAuthentication, cityDetails);
 router.get('/getPostData', empAuthentication, getPostData);
 router.get('/getActivePostData', empAuthentication, getActivePostData);
+router.post("/deletePost", empAuthentication, deletePost);
+router.post("/completePost", empAuthentication, completePost);
 router.post('/updateAbout', empAuthentication, updateAbout);
 router.post('/updateBasicInfo', empAuthentication, updateBasicInfo);
 router.post('/changeImage', empAuthentication, upload.single('image'), changeImg);

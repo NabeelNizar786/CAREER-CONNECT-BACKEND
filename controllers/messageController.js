@@ -23,6 +23,7 @@ const addMessage = async (req, res) => {
       const result = await messageModel.find({ chatId });
   
       if (result) {
+        await messageModel.updateMany({ chatId }, { isRead: true });
         return res.status(200).json({ result });
       }
     } catch (error) {
@@ -30,6 +31,7 @@ const addMessage = async (req, res) => {
       return res.status(500).json(error);
     }
   };
+  
   
   module.exports = {
     addMessage,

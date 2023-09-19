@@ -26,7 +26,7 @@ const {cityDetails} = require('../controllers/cityController');
 const {skillDetails} = require('../controllers/skillController');
 const upload = require('../middlewares/multer');
 const { createChat, userChat, findChat } = require("../controllers/chatController");
-const { addMessage, getMessages } = require("../controllers/messageController");
+const { addMessage, getMessages, } = require("../controllers/messageController");
 
 router.post('/register', userRegister);
 router.post('/login', userLogin);

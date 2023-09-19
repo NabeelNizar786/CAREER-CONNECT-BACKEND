@@ -1,8 +1,8 @@
 const postModel = require("../model/postModal");
 const empModal = require("../model/empModel");
-const {uploadToCloudinary} = require('../config/cloudinary');
-const sendMail = require('../utils/nodeMailer');
-const userModel = require('../model/userModel');
+const { uploadToCloudinary } = require("../config/cloudinary");
+const sendMail = require("../utils/nodeMailer");
+const userModel = require("../model/userModel");
 
 const createPost = async (req, res) => {
   try {
@@ -112,6 +112,55 @@ const editPost = async (req, res) => {
   }
 };
 
+const deletePost = async (req, res) => {
+  try {
+    const postId = req.body.id;
+
+    const deleted = await postModel.findOneAndDelete({ _id: postId });
+    if (!deleted) {
+      return res.status(404).json({ error: true, message: "Post not found" });
+    }
+    let id = req.empId;
+    let postData = await postModel.find({ empId: id }).populate("empId");
+    if (postData) {
+      return res.status(200).json({
+        success: true,
+        message: "Post updated successfully",
+        postData,
+      });
+    }
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ error: true, message: error.message });
+  }
+};
+
+const completePost = async (req, res) => {
+  try {
+    const postId = req.body.id;
+
+    const completed = await postModel.updateOne(
+      { _id: postId },
+      { $set: { status: "Completed" } }
+    );
+    if (!completed) {
+      return res.status(404).json({ error: true, message: "Post not found" });
+    }
+    let id = req.empId;
+    let postData = await postModel.find({ empId: id }).populate("empId");
+    if (postData) {
+      return res.status(200).json({
+        success: true,
+        message: "Post updated successfully",
+        postData,
+      });
+    }
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ error: true, message: error.message });
+  }
+};
+
 const getPostData = async (req, res) => {
   try {
     let id = req.empId;
@@ -128,11 +177,13 @@ const getPostData = async (req, res) => {
   }
 };
 
-const getSinglePostData = async (req,res) => {
+const getSinglePostData = async (req, res) => {
   try {
     let postId = req.params.postId;
 
-    const postData = await postModel.findOne({_id: postId}).populate("applicants.applicant");
+    const postData = await postModel
+      .findOne({ _id: postId })
+      .populate("applicants.applicant");
 
     if (postData) {
       return res
@@ -148,17 +199,29 @@ const getSinglePostData = async (req,res) => {
       .status(500)
       .json({ success: false, message: "something went wrong" });
   }
-}
+};
 
 const getActivePostData = async (req, res) => {
   try {
+
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 3;
+    const skip = (page - 1) * limit;
+
     let id = req.empId;
     let postData = await postModel
       .find({ empId: id, status: "Active" })
-      .populate("empId");
+      .populate("empId")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
 
-    if (postData) {
-      res.status(200).json({ data: true, message: "data obtained", postData });
+      const totalCount = await postModel.countDocuments({ status: "Active"});
+
+      postData = postData.filter((post) => post.empId !== null);
+
+    if (postData.length > 0) {
+      res.status(200).json({ data: true, message: "data obtained", postData, page, limit, totalCount });
     } else {
       res.status(200).json({ data: false, message: "no post found" });
     }
@@ -178,18 +241,27 @@ const userGetAllPost = async (req, res) => {
       .find({ status: "Active" })
       .populate({
         path: "empId",
-        match: { status: { $ne: false } }
+        match: { status: { $ne: false } },
       })
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
 
-      const totalCount = await postModel.countDocuments({ status: "Active" });
+    const totalCount = await postModel.countDocuments({ status: "Active" });
 
-    postData = postData.filter(post => post.empId !== null);
+    postData = postData.filter((post) => post.empId !== null);
 
     if (postData.length > 0) {
-      res.status(200).json({ data: true, message: "Data obtained", postData, page, limit, totalCount});
+      res
+        .status(200)
+        .json({
+          data: true,
+          message: "Data obtained",
+          postData,
+          page,
+          limit,
+          totalCount,
+        });
     } else {
       res.status(404).json({ data: false, message: "No posts found" });
     }
@@ -235,21 +307,21 @@ const InvitedJobs = async (req, res) => {
   }
 };
 
-const applyJob = async(req, res) => {
+const applyJob = async (req, res) => {
   try {
     const resume = req.file.path;
-    const {postId, coverLetter} = req.body;
+    const { postId, coverLetter } = req.body;
 
-    let post = await postModel.findOne({_id: postId});
+    let post = await postModel.findOne({ _id: postId });
 
-    if(post) {
+    if (post) {
       const existingApplicant = post.applicants.find(
         (applicant) => applicant.applicant.toString() === req.userId
       );
 
       if (existingApplicant) {
         return res
-        .status(400)
+          .status(400)
           .json({ success: true, message: "ALREADY APPLIED" });
       }
     }
@@ -262,126 +334,134 @@ const applyJob = async(req, res) => {
       coverLetter: coverLetter,
       resumeUrl: data.url,
       resumePublicId: data.public_id,
-    }
+    };
 
     post.applicants.push(newApplicant);
     await post.save();
 
     return res
-    .status(200)
-    .json({ success: true, message: "APPLIED SUCCESFULLY", post });
+      .status(200)
+      .json({ success: true, message: "APPLIED SUCCESFULLY", post });
   } catch (error) {
     console.log(error);
-    res
-    .status(500)
-    .json({ success: false, message: "SOMETHING WENT WRONG" });
+    res.status(500).json({ success: false, message: "SOMETHING WENT WRONG" });
   }
-  }
+};
 
-  const userApplications = async (req, res) => {
-    try {
-      const userId = req.userId;
-      const status = req.params.status;
-      const postData = await postModel
-        .find({
-          applicants: {
-            $elemMatch: {
-              applicant: userId,
-              status: status,
-            },
+const userApplications = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const status = req.params.status;
+    const postData = await postModel
+      .find({
+        applicants: {
+          $elemMatch: {
+            applicant: userId,
+            status: status,
           },
-        })
-        .populate("empId");
-      if (postData) {
-        res.status(200).json({ success: true, postData });
-      } else {
-        res.status(200).json({ success: true, postData: [{}] });
-      }
-    } catch (error) {
-      console.log(error);
-      return res
-        .status(500)
-        .json({ success: false, message: "something went wrong" });
+        },
+      })
+      .populate("empId");
+    if (postData) {
+      res.status(200).json({ success: true, postData });
+    } else {
+      res.status(200).json({ success: true, postData: [{}] });
     }
-  };
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(500)
+      .json({ success: false, message: "something went wrong" });
+  }
+};
 
-  const empUserInvite = async (req, res) => {
-    try {
-      console.log(req.body);
-      const { userId, postId } = req.body;
-      const postData = await postModel.findOne({ _id: postId });
-      const alreadyInvited = postData.invites.some(
-        (invite) => invite.userId.toString() === userId
-      );
-      if (alreadyInvited) {
-        return res
-          .status(200)
-          .json({ success: false, message: "User already invited", postData });
-      }
-      const newUser = {
-        userId: userId,
-      };
-      postData.invites.push(newUser);
-      await postData.save();
-      console.log(postData);
+const empUserInvite = async (req, res) => {
+  try {
+    console.log(req.body);
+    const { userId, postId } = req.body;
+    const postData = await postModel.findOne({ _id: postId });
+    const alreadyInvited = postData.invites.some(
+      (invite) => invite.userId.toString() === userId
+    );
+    if (alreadyInvited) {
       return res
         .status(200)
-        .json({ succes: true, message: "invited successfully", postData });
-    } catch (error) {
-      console.log(error);
-      return res
-        .status(500)
-        .json({ success: false, message: "internal server error" });
+        .json({ success: false, message: "User already invited", postData });
     }
-  };
+    const newUser = {
+      userId: userId,
+    };
+    postData.invites.push(newUser);
+    await postData.save();
+    console.log(postData);
+    return res
+      .status(200)
+      .json({ succes: true, message: "invited successfully", postData });
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(500)
+      .json({ success: false, message: "internal server error" });
+  }
+};
 
-  const changeApplicationStatus = async(req,res) => {
-    try {
-      const {postId, applicationId, newStatus, userId} = req.params;
-      console.log(postId, applicationId, newStatus, userId);
+const changeApplicationStatus = async (req, res) => {
+  try {
+    const { postId, applicationId, newStatus, userId } = req.params;
+    console.log(postId, applicationId, newStatus, userId);
 
-      let postData = await postModel.findOneAndUpdate(
-        {_id:postId, "applicants._id": applicationId},
-        {$set: {"applicants.$.status" : newStatus}},
-        {new:true}
+    let postData = await postModel
+      .findOneAndUpdate(
+        { _id: postId, "applicants._id": applicationId },
+        { $set: { "applicants.$.status": newStatus } },
+        { new: true }
       )
       .populate("applicants.applicant")
       .populate("empId");
 
-      if(!postData) {
-        return res
+    if (!postData) {
+      return res
         .status(404)
         .json({ success: false, message: "post not found" });
-      }
-      
-      console.log('Before userData retrieval');
-     const userData = await userModel.findByIdAndUpdate({_id: userId});
-console.log('After userData retrieval');
-console.log(userData);
+    }
 
-      let message = "";
+    console.log("Before userData retrieval");
+    const userData = await userModel.findByIdAndUpdate({ _id: userId });
+    console.log("After userData retrieval");
+    console.log(userData);
 
-      if(newStatus == "Selected") {
-        message = `Congratulations  on your selection! We are thrilled to inform you that your application for the ${postData.role} position has been chosen by ${postData.empId.companyName}.
-       Your skills and experience stood out among the applicants, and we believe you will be a valuable addition to our team.
-         Welcome aboard!`;
-      } else if (newStatus == "Rejected") {
-        message = `We regret to inform you that your job application for the ${postData.role} position has been rejected by ${postData.empId.companyName}.
+    let message = "";
+
+    if (newStatus == "Selected") {
+      message = `Congratulations on your selection! We are thrilled to inform you that your application for the ${postData.role} position has been chosen by ${postData.empId.companyName}. Your skills and experience stood out among the applicants, and we believe you will be a valuable addition to our team. Welcome aboard!
+
+To kick off this exciting journey, we have scheduled a video meeting at 3:00 PM. Here are the details on how to access the meeting:
+- **Date and Time:** 22-08-2023, 3:00 PM
+- Meeting Room Password is 1234
+
+Please note that the video meeting option in the employer's profile will only be available during this one-hour window, from 3:00 PM to 4:00 PM on the mentioned date. To find the video meeting option and join the meeting room, please follow these steps:
+1. Log in to your account on our platform.
+2. Go to your User Profile.
+3. Under the My Requests section, you will find the name of the employer who selected you (${postData.empId.companyName}).
+4. Click on the employer's name to access their profile for more information.
+
+If you encounter any issues or have questions before the meeting, please don't hesitate to reach out to us. We look forward to meeting you virtually and discussing your exciting future with ${postData.empId.companyName}. Once again, congratulations on your selection!`;
+    } else if (newStatus == "Rejected") {
+      message = `We regret to inform you that your job application for the ${postData.role} position has been rejected by ${postData.empId.companyName}.
         We appreciate your interest in our company and wish you the best in your future endeavors.`;
-      }
+    }
 
-      await sendMail(userData.email, "Application Status", message);
+    await sendMail(userData.email, "Application Status", message);
 
-      return res
+    return res
       .status(200)
       .json({ success: true, message: "updated successfully", postData });
-    } catch (error) {
-      return res
+  } catch (error) {
+    return res
       .status(500)
       .json({ success: false, message: "something went wrong" });
-    }
   }
-
+};
 
 module.exports = {
   createPost,
@@ -395,5 +475,7 @@ module.exports = {
   editPost,
   InvitedJobs,
   userApplications,
-  empUserInvite
+  empUserInvite,
+  deletePost,
+  completePost,
 };

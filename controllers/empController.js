@@ -6,8 +6,9 @@ const {uploadToCloudinary,
 removeFromCloudinary} = require('../config/cloudinary');
 const userModel = require('../model/userModel');
 const stripe = require('stripe')(process.env.STRIPE_KEY);
-const BASE1_URL = process.env.BASE1_URL
-const PREMIUM_PRICE_INR = 1000 * 10;
+const BASE_URL = process.env.BASE_URL
+console.log(BASE_URL);
+const PREMIUM_PRICE_INR = 1000 * 100;
 const {v4: uuidv4} = require("uuid");
 const subscriptionModel = require("../model/subscriptionModel");
 
@@ -252,8 +253,10 @@ const getUserData = async(req,res) => {
 const empUserSearch = async (req, res) => {
   try {
     const { skill } = req.query;
-
-    if (!skill || skill.trim() === "") {
+    console.log(skill);
+    const skillUpperCase = skill.toUpperCase();
+    console.log(skillUpperCase);
+    if (!skillUpperCase || skillUpperCase.trim() === "") {
       // If skill is not provided or empty, return all users
       const userData = await userModel.find({});
       if (userData) {
@@ -263,8 +266,9 @@ const empUserSearch = async (req, res) => {
       }
     } else {
       // If a skill is provided, search for users with that skill
-      const userData = await userModel.find({ skills: { $in: [skill] } });
+      const userData = await userModel.find({ skills: { $in: [skillUpperCase] } });
       if (userData) {
+        console.log(userData);
         return res.status(200).json({ success: true, userData });
       } else {
         return res.status(200).json({ success: true, userData: [] });
@@ -297,8 +301,8 @@ const premium = async(req,res) => {
           quantity: 1,
         },
       ],
-      success_url: `${BASE1_URL}employer/paymentSuccess/${req.empId}`,
-      cancel_url: `${BASE1_URL}/employer/subscription`,
+      success_url: `${BASE_URL}/employer/paymentSuccess/${req.empId}`,
+      cancel_url: `${BASE_URL}/employer/subscription`,
     });
 
     res.status(200).json({ url: session.url });
