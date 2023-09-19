@@ -6,7 +6,7 @@ let activeUsers = [];
 const configureSocket = (server) => {
   io = socket(server, {
     cors: {
-      origin: ["https://careerconnectapp.onrender.com"],
+      origin: ["https://careerconnects.netlify.app"],
       methods: ["GET", "POST", "PATCH"],
       credentials: true,
     },
