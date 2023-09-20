@@ -9,6 +9,7 @@ const userRoute = require('./routes/userRoute');
 const empRoute = require('./routes/empRoute');
 const adminRoute = require('./routes/adminRoute');
 const cors = require("cors");
+const local = "http://localhost:5173";
 
 //socketSetup
 
